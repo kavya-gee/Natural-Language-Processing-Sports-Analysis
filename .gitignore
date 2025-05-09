@@ -1,0 +1,10 @@
+venv/
+
+desktop.ini
+pyvenv.cfg
+Lib/site-packages/
+Results/
+Scripts/
+etc/
+share/
+sports_interview_gpt2/
