@@ -6,6 +6,9 @@ import plotly.express as px
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from transformers import pipeline, GPT2LMHeadModel, GPT2Tokenizer
+import requests
+import os
+import shutil
 
 # --- Category Descriptions ---
 category_descriptions = {
@@ -41,6 +44,8 @@ def load_embeddings_data():
 @st.cache_resource
 def load_generation_pipeline():
     try:
+        # Google Drive for now, will go with huggingface later
+        download_large_file("https://huggingface.co/kavya-gee-class-works/nlp-project/resolve/main/model.safetensors?download=true", "./sports_interview_gpt2/model.safetensors")
         tokenizer = GPT2Tokenizer.from_pretrained("./sports_interview_gpt2")
         model = GPT2LMHeadModel.from_pretrained("./sports_interview_gpt2").to('cpu')
         tokenizer.pad_token = tokenizer.eos_token
@@ -48,6 +53,69 @@ def load_generation_pipeline():
     except Exception as e:
         st.error(f"Error loading fine-tuned GPT-2 model from './sports_interview_gpt2': {e}")
         return None, None
+
+def download_large_file(url, local_filename=None):
+    """
+    Downloads a large file from a given URL and saves it to the project folder.
+
+    Args:
+        url (str): The URL of the file to download.
+        local_filename (str, optional): The name to save the file as.
+                                         If None, it will use the filename from the URL.
+                                         Defaults to None.
+
+    Returns:
+        str: The path to the downloaded file if successful, None otherwise.
+    """
+    if local_filename is None:
+        local_filename = url.split('/')[-1]
+        if not local_filename:
+            local_filename = "downloaded_file"
+
+    project_folder = os.getcwd()
+    file_path = os.path.join(project_folder, local_filename)
+
+    try:
+        print(f"Starting download from: {url}")
+        with requests.get(url, stream=True) as r:
+            r.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
+            total_size = int(r.headers.get('content-length', 0))
+            block_size = 8192  # 8KB
+            downloaded_size = 0
+
+            with open(file_path, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=block_size):
+                    if chunk:  # filter out keep-alive new chunks
+                        f.write(chunk)
+                        downloaded_size += len(chunk)
+                        if total_size > 0:
+                            progress = (downloaded_size / total_size) * 100
+                            print(f"Downloaded: {downloaded_size / (1024*1024):.2f} MB / {total_size / (1024*1024):.2f} MB ({progress:.2f}%)", end='\r')
+                        else:
+                            print(f"Downloaded: {downloaded_size / (1024*1024):.2f} MB (Total size unknown)", end='\r')
+            print(f"\nDownload complete! File saved as: {file_path}")
+            return file_path
+    except requests.exceptions.HTTPError as http_err:
+        print(f"HTTP error occurred: {http_err} - {r.status_code} {r.reason}")
+    except requests.exceptions.ConnectionError as conn_err:
+        print(f"Error connecting: {conn_err}")
+    except requests.exceptions.Timeout as timeout_err:
+        print(f"Timeout error: {timeout_err}")
+    except requests.exceptions.RequestException as req_err:
+        print(f"An error occurred during the request: {req_err}")
+    except IOError as io_err:
+        print(f"File I/O error: {io_err}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+    # Clean up partially downloaded file if an error occurred
+    if os.path.exists(file_path) and downloaded_size < (total_size if 'total_size' in locals() else float('inf')):
+        try:
+            os.remove(file_path)
+            print(f"Partially downloaded file {local_filename} removed.")
+        except OSError as e:
+            print(f"Error removing partially downloaded file: {e}")
+    return None
 
 vectorizer, classifier = load_classification_model()
 embeddings_df = load_embeddings_data()

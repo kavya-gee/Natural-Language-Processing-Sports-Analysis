@@ -7,4 +7,4 @@ Results/
 Scripts/
 etc/
 share/
-sports_interview_gpt2/
+sports_interview_gpt2/model.safetensors
