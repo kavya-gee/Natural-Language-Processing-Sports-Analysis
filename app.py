@@ -44,7 +44,6 @@ def load_embeddings_data():
 @st.cache_resource
 def load_generation_pipeline():
     try:
-        # Google Drive for now, will go with huggingface later
         download_large_file("https://huggingface.co/kavya-gee-class-works/nlp-project/resolve/main/model.safetensors?download=true", "./sports_interview_gpt2/model.safetensors")
         tokenizer = GPT2Tokenizer.from_pretrained("./sports_interview_gpt2")
         model = GPT2LMHeadModel.from_pretrained("./sports_interview_gpt2").to('cpu')
