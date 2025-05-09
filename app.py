@@ -23,8 +23,8 @@ category_descriptions = {
 @st.cache_resource
 def load_classification_model():
     try:
-        vectorizer = joblib.load('models/tfidf_vectorizer.joblib')
-        classifier = joblib.load('models/logreg_model.joblib')
+        vectorizer = joblib.load('Models/tfidf_vectorizer.joblib')
+        classifier = joblib.load('Models/logreg_model.joblib')
         return vectorizer, classifier
     except FileNotFoundError:
         st.error("Classification model files not found in 'models/'.")
